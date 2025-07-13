@@ -10,10 +10,12 @@ import getpass
 from pathlib import Path
 import argparse
 
-# Add current directory to path so we can import our modules
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Add parent directory to path so we can import our modules
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
 
-from decryptAPI import AESDecryptionAPI, validate_encrypted_files, get_encryption_info
+from api.decryptAPI import AESDecryptionAPI, validate_encrypted_files, get_encryption_info
 
 
 def get_file_path(prompt: str, file_type: str = "file") -> str:
