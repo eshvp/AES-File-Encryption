@@ -8,8 +8,9 @@ sys.path.append(str(Path(__file__).parent.parent / "Encryption"))
 
 try:
     from AES import AESEncryption
+    from AESDecrypt import AESDecryption
 except ImportError:
-    print("Warning: AES encryption module not found. Encryption functionality will be limited.")
+    print("Warning: AES encryption/decryption modules not found. Encryption functionality will be limited.")
 
 def clean_file_path(file_path):
     """Clean file path by removing quotes and trailing parentheses"""
@@ -249,9 +250,101 @@ def encrypt_files():
 
 def decrypt_file():
     """Decrypt an encrypted file"""
-    # Logic to be implemented
-    print("Decrypt file functionality - Coming soon...")
-    pass
+    try:
+        # Check if AESDecryption module is available
+        if 'AESDecryption' not in globals():
+            print("Error: AES decryption module not available.")
+            print("Please ensure the AESDecrypt.py file exists in the Encryption directory.")
+            return
+        
+        encrypted_dir = Path("encrypted_files")
+        
+        # Check if encrypted directory exists
+        if not encrypted_dir.exists():
+            print("No encrypted files found. Encrypted directory doesn't exist yet.")
+            return
+        
+        # Get all encrypted files in the directory
+        files = [f for f in encrypted_dir.iterdir() if f.is_file() and f.name.endswith('.encrypted')]
+        
+        if not files:
+            print("No files have been encrypted yet.")
+            return
+        
+        # Display available files
+        print(f"\n--- Available Files for Decryption ({len(files)} total) ---")
+        for i, file_path in enumerate(files, 1):
+            # Get file size
+            file_size = file_path.stat().st_size
+            size_str = format_file_size(file_size)
+            
+            # Get last modified time
+            import datetime
+            mod_time = datetime.datetime.fromtimestamp(file_path.stat().st_mtime)
+            mod_time_str = mod_time.strftime("%Y-%m-%d %H:%M:%S")
+            
+            # Try to detect encryption type for display
+            try:
+                aes_decryptor = AESDecryption()
+                key_size_bits, _, _ = aes_decryptor.detect_encryption_type(file_path)
+                encryption_info = f"AES-{key_size_bits}" if key_size_bits else "Unknown"
+            except:
+                encryption_info = "Unknown"
+            
+            print(f"{i:2d}. {file_path.name}")
+            print(f"     Size: {size_str}")
+            print(f"     Modified: {mod_time_str}")
+            print(f"     Type: {encryption_info}")
+            print()
+        
+        # Get user choice for file selection
+        while True:
+            try:
+                choice = input(f"\nEnter file number to decrypt (1-{len(files)}) or 'q' to quit: ").strip().lower()
+                
+                if choice == 'q' or choice == 'quit':
+                    print("Decryption cancelled.")
+                    return
+                
+                file_index = int(choice) - 1
+                
+                if 0 <= file_index < len(files):
+                    selected_file = files[file_index]
+                    break
+                else:
+                    print(f"Invalid choice. Please enter a number between 1 and {len(files)}.")
+                    
+            except ValueError:
+                print("Invalid input. Please enter a number or 'q' to quit.")
+        
+        # Get password
+        password = input("\nEnter decryption password: ").strip()
+        
+        if not password:
+            print("Error: Password cannot be empty.")
+            return
+        
+        # Decrypt the selected file
+        print(f"\nDecrypting {selected_file.name}...")
+        
+        try:
+            aes_decryptor = AESDecryption()
+            decrypted_path, original_name, key_size_bits = aes_decryptor.decrypt_file(
+                selected_file, password
+            )
+            
+            print(f"✓ Decryption successful!")
+            print(f"  Original file: {original_name}")
+            print(f"  Decrypted file: {decrypted_path}")
+            print(f"  Encryption type: AES-{key_size_bits}")
+            print(f"  Saved to: {aes_decryptor.decrypted_dir}")
+            
+        except Exception as e:
+            print(f"✗ Decryption failed: {str(e)}")
+            print("Please check your password and try again.")
+        
+    except Exception as e:
+        print(f"Error during decryption: {e}")
 
 def exit_program():
     """Exit the program"""
