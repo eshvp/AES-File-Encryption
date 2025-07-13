@@ -1,108 +1,216 @@
-# AES File Encryption System
+# 🔐 Hybrid Encryption System
 
-A secure file encryption system using AES encryption with multiple key sizes (128, 192, 256-bit) and hidden metadata tags for enhanced security.
+A comprehensive file encryption system combining **AES symmetric encryption** and **RSA asymmetric encryption** for secure file sharing. Features a modular architecture with a central control panel for coordinating all encryption operations.
 
-## Features
+## 🚀 Features
 
-- **File Upload & Management**: Upload files with path cleaning (handles quotes and parentheses)
-- **Multiple AES Encryption Levels**: Choose between AES-128, AES-192, or AES-256
-- **Hidden Metadata Tags**: Encryption type hidden in file metadata for obfuscation
-- **Secure Key Derivation**: PBKDF2 with SHA-256 (100,000 iterations)
-- **File Listing**: Separate views for uploaded and encrypted files
-- **File Deletion**: Safe file removal with confirmation
-- **Clean Filenames**: No encryption type visible in filenames
+### 🔒 **Hybrid Encryption**
+- **AES-256-CBC** for fast file encryption
+- **RSA-OAEP-SHA256** for secure key exchange
+- **Complete sender/receiver workflow** for secure file sharing
 
-## Directory Structure
+### 📁 **File Management**
+- Upload and organize files with automatic path cleaning
+- Support for any file type and size
+- Clean directory structure with automatic organization
 
+### 🔑 **RSA Key Management**
+- Generate RSA key pairs (2048/3072/4096-bit)
+- Recipient management with public key validation
+- Secure private key storage
+
+### 🛡️ **Security Features**
+- **Random AES key generation** (32 bytes for AES-256)
+- **PBKDF2 key derivation** with 100,000 iterations
+- **Random IV per file** for maximum security
+- **Hidden metadata tags** for encryption type detection
+- **Comprehensive package validation**
+
+## 🏗️ Architecture
+
+### **Modular Design**
 ```
-AES-File-Encryption/
+🔐 Control Panel (Central Hub)
+├── 📁 File Manager (upload.py)
+├── 🔒 AES Encryption (AES.py)
+├── 🔓 AES Decryption (AESDecrypt.py)
+└── 🔑 RSA & Hybrid (RSA.py)
+```
+
+### **Directory Structure**
+```
+Encrypted-Files/
+├── Control-Center/
+│   └── controlPanel.py    # 🎯 Main control hub
 ├── Upload/
-│   └── upload.py          # Main application with menu interface
+│   └── upload.py         # 📁 File management
 ├── Encryption/
-│   ├── AES.py            # AES encryption implementation
-│   └── AESDecrypt.py     # AES decryption implementation
-├── uploaded_files/        # Uploaded files (excluded from git)
-├── encrypted_files/       # Encrypted files (excluded from git)
-├── decrypted_files/       # Decrypted files (excluded from git)
-└── .gitignore
+│   ├── AES.py           # 🔒 AES encryption
+│   ├── AESDecrypt.py    # 🔓 AES decryption
+│   └── RSA.py           # 🔑 RSA & hybrid operations
+├── uploaded_files/       # 📂 Source files
+├── encrypted_files/      # 🔒 AES encrypted files
+├── encrypted_packages/   # 📦 Hybrid encryption packages
+├── decrypted_files/      # 🔓 Decrypted files
+├── rsa_keys/            # 🔑 RSA key pairs
+└── recipients/          # 👥 Recipient public keys
 ```
 
-## Usage
+## 🎯 Quick Start
 
-### Running the Application
-
+### **1. Launch Control Panel**
 ```bash
-cd Upload
-python upload.py
+cd Control-Center
+python controlPanel.py
 ```
 
-### Menu Options
+### **2. Basic Workflow**
+1. **Upload files** (Option 1: File Manager)
+2. **Generate RSA keys** (Option 4: RSA Menu)
+3. **Add recipients** (Option 4: RSA Menu)
+4. **Encrypt for recipient** (Option 5: Quick Hybrid)
+5. **Send package** to recipient
+6. **Recipient decrypts** (Option 6: Decrypt Package)
 
-1. **Upload File** - Upload files with automatic path cleaning
-2. **List Uploaded Files** - View unencrypted files with status
-3. **List Encrypted Files** - View encrypted files
-4. **Encrypt Files** - Encrypt uploaded files with AES
-5. **Decrypt File** - Decrypt encrypted files
-6. **Delete File** - Remove files from upload directory
-7. **Exit** - Close the application
+## 🔄 Usage Modes
 
-### Encryption Process
+### **🎛️ Control Panel Mode (Recommended)**
+```bash
+python Control-Center/controlPanel.py
+```
+- **Unified interface** for all operations
+- **Quick access** to common tasks
+- **System status** and diagnostics
 
-1. Select files to encrypt (individual or all)
-2. Choose AES encryption strength:
-   - AES-128: Fast, good security
-   - AES-192: Balanced security and performance
-   - AES-256: Maximum security, slower
-3. Enter and confirm password (minimum 8 characters)
-4. Files are encrypted and originals are securely deleted
+### **📦 Individual Module Mode**
+```bash
+# File management
+python Upload/upload.py
 
-### Hidden Tags
+# AES encryption
+python Encryption/AES.py
 
-The system uses hidden metadata tags to identify encryption types:
-- AES-128: `(h1k789)`
-- AES-192: `(GP94GF)`
-- AES-256: `(k913h923)`
+# AES decryption
+python Encryption/AESDecrypt.py
 
-These tags are embedded in the encrypted file header for automatic detection during decryption.
+# RSA & hybrid operations
+python Encryption/RSA.py
+```
 
-## Security Features
+## 🔒 Hybrid Encryption Workflow
 
-- **PBKDF2 Key Derivation**: 100,000 iterations with SHA-256
-- **Random Salt & IV**: Unique 16-byte salt and IV for each encryption
-- **PKCS7 Padding**: Proper block alignment for AES
-- **CBC Mode**: Secure block chaining
-- **Password Confirmation**: Prevents typos during encryption
-- **Original File Deletion**: Automatic cleanup after encryption
+### **📤 Sender Side**
+1. **Generate random AES-256 key** (32 bytes)
+2. **Encrypt file** with AES-256-CBC
+3. **Encrypt AES key** with recipient's RSA public key
+4. **Package everything** together:
+   ```
+   📦 Package/
+   ├── original_file.txt.encrypted  # AES-encrypted file
+   ├── encrypted_aes_key.bin        # RSA-encrypted AES key
+   └── metadata.json                # Encryption details
+   ```
 
-## Requirements
+### **📥 Receiver Side**
+1. **Decrypt AES key** using RSA private key
+2. **Decrypt file** using recovered AES key
+3. **Restore original file**
+
+## 🛡️ Security Specifications
+
+### **AES Encryption**
+- **Algorithm**: AES-256-CBC
+- **Key Size**: 256 bits (32 bytes)
+- **IV**: Random 16 bytes per file
+- **Padding**: PKCS7
+- **Key Derivation**: PBKDF2-SHA256 (100,000 iterations)
+
+### **RSA Encryption**
+- **Key Sizes**: 2048, 3072, or 4096 bits
+- **Padding**: OAEP with SHA-256
+- **Purpose**: AES key encryption only
+
+### **Hidden Tags**
+- **AES-128**: `(h1k789)`
+- **AES-192**: `(GP94GF)`
+- **AES-256**: `(k913h923)`
+
+## 📋 Menu Options
+
+### **🎯 Control Panel**
+```
+📁 FILE MANAGEMENT:
+  1. File Manager (Upload/List/Delete)
+
+🔒 ENCRYPTION:
+  2. AES Encryption Menu
+  3. AES Decryption Menu
+  4. RSA & Hybrid Encryption Menu
+
+🔒🔑 QUICK HYBRID OPERATIONS:
+  5. Encrypt File for Recipient
+  6. Decrypt Package
+  7. List Encrypted Packages
+
+ℹ️ SYSTEM:
+  8. System Status
+  9. Help
+  10. Exit
+```
+
+## 💻 Requirements
 
 ```bash
 pip install cryptography
 ```
 
-## File Format
+## 🔐 Example: Complete Workflow
 
-Encrypted files use the following structure:
-```
-[Hidden Tag][16-byte Salt][16-byte IV][Encrypted Data]
-```
-
-## Example
-
+### **Setup Phase**
 ```bash
-# Upload a file
-Enter the file path to upload: "C:\Documents\secret.txt"
+# 1. Generate your RSA key pair
+RSA Menu → Generate Key Pair → "alice_keys" (2048-bit)
 
-# Encrypt with AES-256
-Select AES encryption strength: 3
-Enter encryption password: ********
-✓ secret.txt → secret.txt.encrypted (original deleted)
+# 2. Share public key with recipient
+# Send: rsa_keys/alice_keys_public.pem
 
-# Decrypt the file
-Enter decryption password: ********
-✓ secret.txt.encrypted → secret.txt (AES-256)
+# 3. Add recipient's public key
+RSA Menu → Add Recipient → "Bob" → bob_public.pem
 ```
 
-## License
+### **Encryption Phase**
+```bash
+# 1. Upload file
+File Manager → Upload → "secret-document.pdf"
+
+# 2. Encrypt for recipient
+Quick Hybrid → Select file → Select "Bob" → ✓ Package created
+```
+
+### **Package Contents**
+```
+encrypted_packages/secret-document_Bob_20250712_143022/
+├── secret-document.pdf.encrypted  # AES-256 encrypted file
+├── encrypted_aes_key.bin          # RSA encrypted AES key
+└── metadata.json                  # Encryption metadata
+```
+
+### **Decryption Phase** (Recipient)
+```bash
+# Recipient receives package and decrypts
+Decrypt Package → Select package → Select private key → Enter password
+✓ File decrypted: decrypted_files/secret-document.pdf
+```
+
+## 🎯 Benefits
+
+- **🔒 Security**: Military-grade hybrid encryption
+- **🏗️ Modularity**: Each component is independent
+- **🎛️ Flexibility**: Use control panel or individual modules
+- **📦 Portability**: Self-contained encryption packages
+- **🔄 Workflow**: Complete sender-to-receiver process
+- **🛡️ Future-proof**: Easy to extend and maintain
+
+## 📄 License
 
 This project is for educational and personal use.
