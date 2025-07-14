@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import base64
 from pathlib import Path
@@ -8,6 +9,10 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 from typing import Dict, Tuple, Optional
+
+# Add parent directory to path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from Encryption.RSA import HybridEncryption
 
 
 class AESDecryptionAPI:
@@ -28,6 +33,7 @@ class AESDecryptionAPI:
     
     def __init__(self):
         self.backend = default_backend()
+        self.hybrid_encryption = HybridEncryption()
     
     def generate_key(self, password: str, salt: bytes, key_size: int) -> bytes:
         """Generate decryption key from password using PBKDF2"""
@@ -231,7 +237,121 @@ class AESDecryptionAPI:
             result['errors'].append(f"Validation error: {str(e)}")
         
         return result
+    
+    def decrypt_data_hybrid(self, encrypted_data: bytes, metadata: Dict, private_key_path: str) -> bytes:
+        """
+        Decrypt data using hybrid RSA+AES encryption
+        
+        Args:
+            encrypted_data: Binary encrypted data
+            metadata: Metadata dictionary containing encrypted AES key and IV
+            private_key_path: Path to RSA private key
+        
+        Returns:
+            bytes: Decrypted file data
+        """
+        # Extract metadata
+        iv = base64.b64decode(metadata['iv'])
+        
+        # Decrypt AES key using RSA
+        encrypted_key_data = {
+            'encrypted_aes_key': metadata['encrypted_aes_key'],
+            'rsa_key_size': metadata['rsa_key_size']
+        }
+        aes_key = self.hybrid_encryption.decrypt_with_hybrid(encrypted_key_data, private_key_path)
+        
+        # Decrypt data with AES
+        cipher = Cipher(algorithms.AES(aes_key), modes.CBC(iv), backend=self.backend)
+        decryptor = cipher.decryptor()
+        padded_data = decryptor.update(encrypted_data) + decryptor.finalize()
+        
+        # Remove padding
+        unpadder = padding.PKCS7(128).unpadder()
+        file_data = unpadder.update(padded_data)
+        file_data += unpadder.finalize()
+        
+        return file_data
 
+    def decrypt_file_hybrid(self, encrypted_file_path: str, metadata_file_path: str, 
+                           private_key_path: str, output_path: Optional[str] = None) -> str:
+        """
+        Decrypt a file using hybrid RSA+AES encryption
+        
+        Args:
+            encrypted_file_path: Path to encrypted .enc file
+            metadata_file_path: Path to metadata .json file
+            private_key_path: Path to RSA private key
+            output_path: Optional custom output path
+        
+        Returns:
+            str: Path to decrypted file
+        """
+        # Load encrypted data as binary
+        with open(encrypted_file_path, 'rb') as file:
+            encrypted_data = file.read()
+        
+        # Load metadata
+        metadata = self.load_metadata(metadata_file_path)
+        
+        # Verify this is hybrid encryption
+        if metadata.get('encryption_method') != 'hybrid_rsa_aes':
+            raise ValueError("File was not encrypted with hybrid RSA+AES method")
+        
+        # Decrypt data
+        try:
+            decrypted_data = self.decrypt_data_hybrid(encrypted_data, metadata, private_key_path)
+        except Exception as e:
+            raise ValueError(f"Decryption failed: {str(e)}")
+        
+        # Determine output path
+        if output_path is None:
+            encrypted_path = Path(encrypted_file_path)
+            # Use original filename if available
+            if 'original_filename' in metadata:
+                original_name = Path(metadata['original_filename']).stem
+            else:
+                original_name = encrypted_path.stem.replace('_encrypted', '')
+            output_path = encrypted_path.parent / f"{original_name}_decrypted"
+        
+        # Save decrypted file
+        with open(output_path, 'wb') as file:
+            file.write(decrypted_data)
+        
+        return str(output_path)
+    
+    def decrypt_file_auto(self, encrypted_file_path: str, metadata_file_path: str, 
+                         password: str = None, private_key_path: str = None, 
+                         output_path: Optional[str] = None) -> str:
+        """
+        Automatically detect and decrypt file using appropriate method
+        
+        Args:
+            encrypted_file_path: Path to encrypted .enc file
+            metadata_file_path: Path to metadata .json file
+            password: Decryption password (for password-based encryption)
+            private_key_path: Path to RSA private key (for hybrid encryption)
+            output_path: Optional custom output path
+        
+        Returns:
+            str: Path to decrypted file
+        """
+        # Load metadata to detect encryption method
+        metadata = self.load_metadata(metadata_file_path)
+        
+        # Check encryption method
+        if metadata.get('encryption_method') == 'hybrid_rsa_aes':
+            # Hybrid RSA+AES encryption
+            if not private_key_path:
+                raise ValueError("Private key path required for hybrid encryption")
+            return self.decrypt_file_hybrid(encrypted_file_path, metadata_file_path, 
+                                          private_key_path, output_path)
+        else:
+            # Traditional password-based encryption
+            if not password:
+                raise ValueError("Password required for password-based encryption")
+            return self.decrypt_file(encrypted_file_path, metadata_file_path, 
+                                   password, output_path)
+    
 
 # Convenience functions for easy API usage
 def decrypt_file(encrypted_file_path: str, metadata_file_path: str, 

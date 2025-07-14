@@ -7,8 +7,10 @@ User-friendly interface for decrypting AES encrypted files
 import os
 import sys
 import getpass
+import json
 from pathlib import Path
 import argparse
+import json
 
 # Add parent directory to path so we can import our modules
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -181,23 +183,39 @@ def decrypt_selected_file(file_info: dict):
     # Get encryption info
     try:
         info = get_encryption_info(metadata_file)
+        encryption_method = detect_encryption_method(metadata_file)
+        
         print(f"📊 Encryption type: {info['encryption_type']}")
         print(f"🏷️  Hidden tag: {info['tag']}")
+        
+        if encryption_method == 'hybrid_rsa_aes':
+            print(f"🔐 Method: Hybrid RSA+AES")
+        else:
+            print(f"🔐 Method: Password-based AES")
+            
     except Exception as e:
         print(f"⚠️  Could not read encryption info: {e}")
+        encryption_method = 'password_based'  # Default fallback
     
-    # Get password
-    password = getpass.getpass("\n🔑 Enter decryption password: ")
-    
-    if not password:
-        print("❌ No password provided")
-        return
+    # Get decryption credentials
+    encryption_method = detect_encryption_method(metadata_file)
+    credentials = get_decryption_credentials(encryption_method)
     
     # Decrypt file
     try:
         print("🔄 Decrypting file...")
         api = AESDecryptionAPI()
-        decrypted_file = api.decrypt_file(encrypted_file, metadata_file, password)
+        
+        if encryption_method == 'hybrid_rsa_aes':
+            decrypted_file = api.decrypt_file_auto(
+                encrypted_file, metadata_file, 
+                private_key_path=credentials['private_key_path']
+            )
+        else:
+            decrypted_file = api.decrypt_file_auto(
+                encrypted_file, metadata_file, 
+                password=credentials['password']
+            )
         
         print(f"✅ Decryption successful!")
         print(f"📁 Decrypted file saved: {decrypted_file}")
@@ -259,6 +277,38 @@ def command_line_mode(args):
     except Exception as e:
         print(f"❌ Error: {e}")
         sys.exit(1)
+
+
+def get_decryption_credentials(encryption_method: str) -> dict:
+    """Get appropriate credentials based on encryption method"""
+    credentials = {}
+    
+    if encryption_method == 'hybrid_rsa_aes':
+        print("🔑 Hybrid RSA+AES encryption detected")
+        print("Please provide your RSA private key for decryption.")
+        
+        credentials['private_key_path'] = get_file_path(
+            "Enter path to RSA private key (.pem): ", "private key"
+        )
+    else:
+        print("🔐 Password-based encryption detected")
+        credentials['password'] = getpass.getpass("\n🔑 Enter decryption password: ")
+        
+        if not credentials['password']:
+            raise ValueError("No password provided")
+    
+    return credentials
+
+
+def detect_encryption_method(metadata_file: str) -> str:
+    """Detect encryption method from metadata"""
+    try:
+        with open(metadata_file, 'r') as f:
+            metadata = json.load(f)
+        return metadata.get('encryption_method', 'password_based')
+    except Exception as e:
+        print(f"⚠️  Could not read encryption method from metadata: {e}")
+        return 'password_based'  # Default to password-based
 
 
 def main():

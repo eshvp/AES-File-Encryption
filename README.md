@@ -1,18 +1,22 @@
 # 🔒 AES File Encryption System
 
-A comprehensive, secure file encryption and decryption system using Advanced Encryption Standard (AES) with multiple key sizes and user-friendly interfaces.
+A comprehensive, secure file encryption and decryption system using Advanced Encryption Standard (AES) with **hybrid RSA+AES encryption** and multiple key sizes with user-friendly interfaces.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.7+-green.svg)
-![Security](https://img.shields.io/badge/security-AES%20256-red.svg)
+![Security](https://img.shields.io/badge/security-Hybrid%20RSA%2BAES-red.svg)
+![Encryption](https://img.shields.io/badge/encryption-AES%20256-blue.svg)
 
 ## 🌟 Features
 
+- **🔐 Hybrid RSA+AES Encryption**: Industry-standard hybrid cryptosystem (NEW!)
+- **🔑 Automatic Key Management**: RSA key pair generation and management
+- **🚫 Password-Free Security**: No passwords to remember or share securely
 - **Multi-Level AES Encryption**: Support for AES-128, AES-192, and AES-256
-- **Secure Key Derivation**: PBKDF2 with SHA-256 for password-based encryption
+- **Legacy Password Support**: Traditional PBKDF2 with SHA-256 for backward compatibility
 - **Hidden Metadata System**: Secure tag-based encryption type identification
+- **Auto-Detection**: Smart detection of encryption method during decryption
 - **User-Friendly Interface**: Interactive CLI and batch file execution
-- **Auto-Detection**: Automatically finds and pairs encrypted files with metadata
 - **Cross-Platform**: Works on Windows, macOS, and Linux
 - **API-Ready**: Modular design for easy integration into other projects
 
@@ -21,10 +25,10 @@ A comprehensive, secure file encryption and decryption system using Advanced Enc
 ```
 AES-File-Encryption/
 ├── 📂 Encryption/           # Core encryption modules
-│   ├── aesEncryption.py    # Main AES encryption class
-│   └── RSA.py             # RSA encryption (placeholder)
+│   ├── aesEncryption.py    # Hybrid RSA+AES and traditional AES encryption
+│   └── RSA.py             # RSA key management and hybrid encryption
 ├── 📂 api/                 # API modules
-│   └── decryptAPI.py      # Decryption API and utilities
+│   └── decryptAPI.py      # Smart decryption API with auto-detection
 ├── 📂 recipient/           # End-user decryption tools
 │   ├── decrypt_tool.py    # Interactive decryption tool
 │   ├── decrypt.bat        # Windows batch launcher
@@ -90,6 +94,21 @@ print(f"Metadata: {metadata_file}")
 | AES-192 | 192-bit  | Very High     | Enhanced security |
 | AES-256 | 256-bit  | Maximum       | Maximum security, government grade |
 
+## 📊 Encryption Method Comparison
+
+| Feature | Hybrid RSA+AES | Password-Based AES |
+|---------|----------------|-------------------|
+| **Security** | ✅ Excellent | ✅ Good |
+| **Key Management** | ✅ Automatic | ❌ Manual password sharing |
+| **Password Required** | ❌ No | ✅ Yes |
+| **Forward Secrecy** | ✅ Yes | ❌ No |
+| **File Size Overhead** | 📊 ~256 bytes (RSA key) | 📊 ~16 bytes (salt) |
+| **Performance** | ✅ Fast | ✅ Fast |
+| **Industry Standard** | ✅ Yes (TLS, PGP) | ⚠️ Legacy |
+| **Best For** | Production, sharing | Simple personal use |
+
+### 🎯 **Recommendation: Use Hybrid RSA+AES for maximum security!**
+
 ## 🔓 Decryption Usage
 
 ### Interactive Mode (Recommended)
@@ -121,6 +140,121 @@ python decrypt_tool.py --auto --base-name "document" --directory "/path/to/files
 ```
 
 ### API Usage
+
+```python
+from api.decryptAPI import AESDecryptionAPI
+
+# Create decryptor instance
+decryptor = AESDecryptionAPI()
+
+# Decrypt a file
+decrypted_file = decryptor.decrypt_file(
+    encrypted_file="document_encrypted.enc",
+    metadata_file="document_metadata.json",
+    password="your_secure_password"
+)
+
+print(f"Decrypted: {decrypted_file}")
+```
+
+## 🔐 Hybrid RSA+AES Encryption (Recommended)
+
+### Why Hybrid Encryption?
+
+The hybrid approach combines the best of both worlds:
+- **RSA**: Secure key exchange (eliminates password sharing)
+- **AES**: Fast file encryption (efficient for large files)
+- **Industry Standard**: Used by TLS, PGP, and other secure systems
+
+### Setting Up RSA Keys
+
+**First-time setup:**
+```python
+from Encryption.RSA import setup_rsa_keys
+
+# Generate RSA key pair
+private_key_path, public_key_path = setup_rsa_keys()
+# Keys are saved as: encryption_key_private.pem, encryption_key_public.pem
+```
+
+### Hybrid Encryption Usage
+
+```python
+from Encryption.aesEncryption import AESEncryption
+
+# Create encryptor instance
+encryptor = AESEncryption()
+
+# Encrypt with hybrid RSA+AES (NO PASSWORD NEEDED!)
+encrypted_data, metadata = encryptor.encrypt_file_hybrid(
+    file_path="document.txt",
+    public_key_path="encryption_key_public.pem",
+    encryption_type="AES-256"
+)
+
+# Save encrypted file
+enc_file, meta_file = encryptor.save_encrypted_file(
+    "document.txt", encrypted_data, metadata
+)
+
+print(f"Encrypted: {enc_file}")
+print(f"Metadata: {meta_file}")
+```
+
+### Hybrid Decryption Usage
+
+```python
+from api.decryptAPI import AESDecryptionAPI
+
+# Create decryptor instance
+decryptor = AESDecryptionAPI()
+
+# Decrypt with RSA private key (NO PASSWORD NEEDED!)
+decrypted_file = decryptor.decrypt_file_hybrid(
+    encrypted_file="document_encrypted.enc",
+    metadata_file="document_metadata.json",
+    private_key_path="encryption_key_private.pem"
+)
+
+print(f"Decrypted: {decrypted_file}")
+```
+
+### Smart Auto-Detection
+
+The system automatically detects encryption method:
+
+```python
+# Works with BOTH password-based AND hybrid encryption!
+decrypted_file = decryptor.decrypt_file_auto(
+    encrypted_file="document_encrypted.enc",
+    metadata_file="document_metadata.json",
+    password="password123",  # For password-based files
+    private_key_path="key.pem"  # For hybrid files
+)
+```
+
+## 🔓 Traditional Password-Based Encryption
+
+### Using the AES Encryption Class
+
+```python
+from Encryption.aesEncryption import AESEncryption
+
+# Create encryptor instance
+encryptor = AESEncryption()
+
+# Encrypt a file with AES-256 using password
+encrypted_file, metadata_file = encryptor.encrypt_file(
+    input_file="document.txt",
+    password="your_secure_password",
+    encryption_type="AES-256"
+)
+
+print(f"Encrypted: {encrypted_file}")
+print(f"Metadata: {metadata_file}")
+```
+
+### Decryption Usage
 
 ```python
 from api.decryptAPI import AESDecryptionAPI
