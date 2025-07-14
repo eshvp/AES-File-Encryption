@@ -63,12 +63,12 @@ class AESDecryptionAPI:
         
         return encryption_type
     
-    def decrypt_data(self, encrypted_data: str, metadata: Dict, password: str) -> bytes:
+    def decrypt_data(self, encrypted_data: bytes, metadata: Dict, password: str) -> bytes:
         """
         Decrypt data using metadata and password
         
         Args:
-            encrypted_data: Base64 encoded encrypted data
+            encrypted_data: Binary encrypted data
             metadata: Metadata dictionary containing salt, IV, and tag
             password: Decryption password
         
@@ -86,8 +86,8 @@ class AESDecryptionAPI:
         key_size = self.KEY_SIZES[encryption_type]
         key = self.generate_key(password, salt, key_size)
         
-        # Decode encrypted data
-        encrypted_bytes = base64.b64decode(encrypted_data)
+        # Use encrypted data directly (no base64 decoding needed)
+        encrypted_bytes = encrypted_data
         
         # Decrypt
         cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=self.backend)
@@ -115,8 +115,8 @@ class AESDecryptionAPI:
         Returns:
             str: Path to decrypted file
         """
-        # Load encrypted data
-        with open(encrypted_file_path, 'r') as file:
+        # Load encrypted data as binary
+        with open(encrypted_file_path, 'rb') as file:
             encrypted_data = file.read()
         
         # Load metadata

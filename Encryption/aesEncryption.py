@@ -81,19 +81,21 @@ class AESEncryption:
             'salt': base64.b64encode(salt).decode(),
             'iv': base64.b64encode(iv).decode(),
             'tag': self.ENCRYPTION_TAGS[encryption_type],
-            'encryption_type': encryption_type
+            'encryption_type': encryption_type,
+            'original_filename': Path(file_path).name,
+            'original_size': len(file_data)
         }
         
-        return base64.b64encode(encrypted_data).decode(), metadata
+        return encrypted_data, metadata
     
-    def save_encrypted_file(self, original_file_path: str, encrypted_data: str, metadata: dict):
+    def save_encrypted_file(self, original_file_path: str, encrypted_data: bytes, metadata: dict):
         """Save encrypted file with metadata"""
         original_path = Path(original_file_path)
         encrypted_file_path = original_path.parent / f"{original_path.stem}_encrypted.enc"
         metadata_file_path = original_path.parent / f"{original_path.stem}_metadata.json"
         
-        # Save encrypted data
-        with open(encrypted_file_path, 'w') as file:
+        # Save encrypted data as binary
+        with open(encrypted_file_path, 'wb') as file:
             file.write(encrypted_data)
         
         # Save metadata
